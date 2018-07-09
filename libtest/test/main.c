@@ -5,15 +5,22 @@
 
 #define RN	"\n"
 typedef int	(*pfn_get_int)(void);
-typedef char*	(*pfn_get_fun)(int at);
-
+typedef char*	(*pfn_get_help)(int at);
+typedef int	(*pfn_get_func)(void* param);
+struct context
+{
+	int a;
+	int b;
+	int r;
+};
 int main(int argc, char** argv)
 {
 	void* plib;
 	int i, count;
-	pfn_get_int fn_version;
-	pfn_get_int fn_count;
-	pfn_get_fun fn_fun;
+	pfn_get_int 	fn_version;
+	pfn_get_int 	fn_count;
+	pfn_get_help 	fn_help;
+	pfn_get_func 	fn_add;
 	char filename[64] = {0};
 	if(argc < 2)
 	{
@@ -37,7 +44,7 @@ int main(int argc, char** argv)
 	printf("INFO: %s, version: %08X\n", filename, fn_version());
 	
 	fn_count = (pfn_get_int)dlsym(plib, "lib_get_count");
-	if(!fn_version)
+	if(!fn_count)
 	{
 		printf("ERROR: dlsym (%s) failed\n", "lib_get_count");
 		dlclose(plib);
@@ -46,18 +53,29 @@ int main(int argc, char** argv)
 	count = fn_count();
 	printf("INFO: %s, count: %d\n", filename, count);
 
-	fn_fun = (pfn_get_fun)dlsym(plib, "lib_get_function");
-	if(!fn_version)
+	fn_help = (pfn_get_help)dlsym(plib, "lib_get_help");
+	if(!fn_help)
 	{
-		printf("ERROR: dlsym (%s) failed\n", "lib_get_function");
+		printf("ERROR: dlsym (%s) failed\n", "lib_get_help");
 		dlclose(plib);
 		return -1;
 	}
 	for(i = 0; i< count; i++)
 	{
-		printf("INFO: %s, function: %s\n", filename, fn_fun(i));
+		printf("INFO: %s, function: %s\n", filename, fn_help(i));
 	}
-	
+	fn_add = (pfn_get_func)dlsym(plib, "add");
+	struct context c = {0};
+	c.a = 3;
+	c.b = 4;
+	if(fn_add(&c) == 0)
+	{
+		printf("add result: %d\n", c.r);
+	}
+	else
+	{
+		printf("add function failed\n");
+	}
 	if(argc >= 3 && (argv[2][0] == 'y' || argv[2][0] == 'Y'))
 	{
 		FILE* file;
@@ -103,7 +121,7 @@ int main(int argc, char** argv)
 		fwrite(msg, 1, strlen(msg), file);
 		for(i = 0; i < count; i++)
 		{
-			sprintf(msg, "%s;%s", fn_fun(i), RN);
+			sprintf(msg, "%s %s", fn_help(i), RN);
 			fwrite(msg, 1, strlen(msg), file);
 		}
 		sprintf(msg, "%s#ifdef __cplusplus%s}%s#endif%s%s", RN, RN, RN, RN, RN);

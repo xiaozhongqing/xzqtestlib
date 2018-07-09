@@ -6,7 +6,14 @@ extern "C"
 {
 #endif
 
-int add(int a, int b);
+
+struct context
+{
+	int a;
+	int b;
+	int result;
+}
+int add(void* param); 
 
 #ifdef __cplusplus
 }

@@ -6,9 +6,21 @@ extern "C"
 {
 #endif
 
-int add(int a, int b)
+struct context
 {
-	return a + b;
+	int a;
+	int b;
+	int result;
+};
+int add(void* param)
+{
+	if(!param)
+	{
+		return -2;		
+	}
+	struct context* p = (struct context*)param;
+	p->result = p->a + p->b;
+	return 0;
 }
 
 int lib_get_version(void)
@@ -19,11 +31,11 @@ int lib_get_count(void)
 {
 	return 1;
 }
-char* lib_get_function(int at)
+char* lib_get_help(int at)
 {
 	if(at == 0)
 	{
-		return (char*)"int add(int a, int b)";
+		return (char*)"\nstruct context\n{\n\tint a;\n\tint b;\n\tint result;\n}\nint add(void* param);";
 	}
 }
 
